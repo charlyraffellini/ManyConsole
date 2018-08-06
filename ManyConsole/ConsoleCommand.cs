@@ -20,6 +20,7 @@ namespace ManyConsole
             RemainingArgumentsHelpText = "";
             OptionsHasd = new OptionSet();
             RequiredOptions = new List<RequiredOptionRecord>();
+            ExceptionHandlers = new List<CommandExceptionHandler>();
         }
 
         public string Command { get; private set; }
@@ -35,6 +36,9 @@ namespace ManyConsole
         private OptionSet OptionsHasd { get; set; }
         private List<RequiredOptionRecord> RequiredOptions { get; set; }
 
+        public IList<CommandExceptionHandler> ExceptionHandlers { get; private set; }
+
+
         private static readonly string[] DefaultTraceCommandSkipProperties =
         {
             nameof(Command),
@@ -47,7 +51,8 @@ namespace ManyConsole
             nameof(RemainingArgumentsCountMin),
             nameof(RemainingArgumentsCountMax),
             nameof(RemainingArgumentsHelpText),
-            nameof(RequiredOptions)
+            nameof(RequiredOptions),
+            nameof(ExceptionHandlers)
         };
 
         public ConsoleCommand IsCommand(string command, string oneLineDescription = "")
@@ -56,6 +61,7 @@ namespace ManyConsole
             OneLineDescription = oneLineDescription;
             return this;
         }
+
         public ConsoleCommand HasAlias(string alias)
         {
             if (!String.IsNullOrEmpty(alias))
@@ -176,6 +182,11 @@ namespace ManyConsole
             return null;
         }
 
+        public void HasExceptionHandler(Type type, Action<Exception, TextWriter> handler)
+        {
+            ExceptionHandlers.Add(new CommandExceptionHandler(type, handler));
+        }
+
         public abstract int Run(string[] remainingArguments);
 
         public OptionSet GetActualOptions()
@@ -189,6 +200,18 @@ namespace ManyConsole
                 result.Add(option);
 
             return result;
+        }
+    }
+
+    public class CommandExceptionHandler
+    {
+        public Type ExceptionType { get; private set; }
+        public Action<Exception, TextWriter> Handler { get; private set; }
+
+        public CommandExceptionHandler(Type exceptionType, Action<Exception, TextWriter> handler)
+        {
+            ExceptionType = exceptionType;
+            Handler = handler;
         }
     }
 }
